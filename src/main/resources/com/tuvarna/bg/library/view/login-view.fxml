@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+
+<StackPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.tuvarna.bg.library.controllers.LoginController"
+           styleClass="root">
+
+    <VBox styleClass="background-pattern" style="-fx-background-color: rgba(255, 255, 255, 0.05);">
+        <HBox styleClass="window-controls" alignment="TOP_RIGHT">
+            <Button fx:id="minimizeButton" text="−" styleClass="minimize-button" />
+            <Button fx:id="closeButton" text="×" styleClass="close-button" />
+        </HBox>
+    </VBox>
+
+    <VBox styleClass="login-container" maxWidth="400" maxHeight="500" alignment="CENTER" spacing="20">
+        <VBox alignment="CENTER" spacing="10">
+            <Label text="📚" style="-fx-font-size: 48px;" />
+            <Label text="Library Management System" styleClass="login-title" />
+            <Label text="Sign in to your account" styleClass="login-subtitle" />
+        </VBox>
+
+        <VBox spacing="15" maxWidth="300">
+            <VBox spacing="5">
+                <Label text="Username" styleClass="form-label" />
+                <TextField fx:id="usernameField" promptText="Enter your username" styleClass="text-field" />
+            </VBox>
+
+            <VBox spacing="5">
+                <Label text="Password" styleClass="form-label" />
+                <PasswordField fx:id="passwordField" promptText="Enter your password" styleClass="text-field" />
+            </VBox>
+
+            <Button fx:id="loginButton" text="Sign In" styleClass="button" onAction="#handleLogin" />
+
+            <Label fx:id="errorLabel" text="" style="-fx-text-fill: #dc3545; -fx-font-size: 12px;"
+                   alignment="CENTER" visible="false" />
+        </VBox>
+
+        <VBox alignment="CENTER" spacing="10">
+            <Label text="Demo Credentials:" style="-fx-text-fill: #6c757d; -fx-font-size: 12px;" />
+            <Label text="Admin: admin/admin123" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;" />
+            <Label text="Manager: manager/manager123" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;" />
+            <Label text="Client: client/client123" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;" />
+        </VBox>
+    </VBox>
+
+    <VBox alignment="BOTTOM_LEFT" style="-fx-translate-x: -50; -fx-translate-y: -50;">
+        <Label text="●" style="-fx-text-fill: rgba(255, 255, 255, 0.1); -fx-font-size: 200;" />
+    </VBox>
+
+    <VBox alignment="TOP_RIGHT" style="-fx-translate-x: 50; -fx-translate-y: 50;">
+        <Label text="●" style="-fx-text-fill: rgba(255, 255, 255, 0.1); -fx-font-size: 150;" />
+    </VBox>
+
+</StackPane>

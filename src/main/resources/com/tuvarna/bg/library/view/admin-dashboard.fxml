@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.StackPane?>
+
+<StackPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.tuvarna.bg.library.controllers.AdminDashboardController"
+           styleClass="dashboard-container">
+
+    <VBox styleClass="header" style="-fx-background-color: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 0);">
+        <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 15 20;">
+            <Label text="📚" style="-fx-font-size: 24px;" />
+            <Label text="Library Management System - Admin Dashboard" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Label fx:id="userLabel" text="Welcome, Admin" style="-fx-text-fill: #667eea;" />
+            <Button text="Logout" styleClass="secondary-button" onAction="#handleLogout" />
+        </HBox>
+    </VBox>
+
+    <VBox style="-fx-translate-y: 60;">
+        <TabPane styleClass="main-tab-pane">
+
+            <Tab text="📖 Books Management" closable="false">
+                <VBox spacing="20" style="-fx-padding: 20;">
+
+                    <VBox styleClass="form-container" spacing="15">
+                        <Label text="Add New Book" styleClass="form-title" />
+
+                        <GridPane hgap="15" vgap="10">
+                            <Label text="Title:" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="form-label" />
+                            <TextField fx:id="titleField" promptText="Enter book title" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="text-field" />
+
+                            <Label text="ISBN:" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="form-label" />
+                            <TextField fx:id="isbnField" promptText="Enter ISBN" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="text-field" />
+
+                            <Label text="Language:" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="form-label" />
+                            <TextField fx:id="languageField" promptText="Enter language" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="text-field" />
+
+                            <Label text="Publication Year:" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="form-label" />
+                            <TextField fx:id="yearField" promptText="Enter publication year" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="text-field" />
+
+                            <Label text="Publisher:" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="form-label" />
+                            <ComboBox fx:id="publisherCombo" promptText="Select publisher" GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="text-field" />
+
+                            <Label text="Summary:" GridPane.columnIndex="0" GridPane.rowIndex="5" styleClass="form-label" />
+                            <TextArea fx:id="summaryArea" promptText="Enter book summary" GridPane.columnIndex="1" GridPane.rowIndex="5" styleClass="text-field"
+                                      prefRowCount="3" wrapText="true" />
+
+                            <Label text="Cover Image:" GridPane.columnIndex="0" GridPane.rowIndex="6" styleClass="form-label" />
+                            <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="6" alignment="CENTER_LEFT">
+                                <Button text="Choose Image" styleClass="button" onAction="#chooseImage" />
+                                <Label fx:id="imageLabel" text="No image selected" style="-fx-text-fill: #6c757d;" />
+                            </HBox>
+
+                            <Label text="Authors:" GridPane.columnIndex="0" GridPane.rowIndex="7" styleClass="form-label" />
+                            <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="7" alignment="CENTER_LEFT">
+                                <TextField fx:id="authorField" promptText="Enter author name" styleClass="text-field" />
+                                <Button text="Add Author" styleClass="secondary-button" onAction="#addAuthor" />
+                            </HBox>
+
+                            <Label text="Genres:" GridPane.columnIndex="0" GridPane.rowIndex="8" styleClass="form-label" />
+                            <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="8" alignment="CENTER_LEFT">
+                                <ComboBox fx:id="genreCombo" promptText="Select genre" styleClass="text-field" />
+                                <Button text="Add Genre" styleClass="secondary-button" onAction="#addGenre" />
+                            </HBox>
+
+                            <Label text="Copies:" GridPane.columnIndex="0" GridPane.rowIndex="9" styleClass="form-label" />
+                            <TextField fx:id="copiesField" promptText="Number of copies" GridPane.columnIndex="1" GridPane.rowIndex="9" styleClass="text-field" />
+                        </GridPane>
+
+                        <HBox spacing="15" alignment="CENTER">
+                            <Button text="Add Book" styleClass="button" onAction="#addBook" />
+                            <Button text="Clear Form" styleClass="secondary-button" onAction="#clearBookForm" />
+                        </HBox>
+                    </VBox>
+
+                    <VBox styleClass="card" spacing="15">
+                        <Label text="Books in Library" styleClass="card-title" />
+
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <TextField fx:id="searchField" promptText="Search books..." styleClass="search-field" prefWidth="300" />
+                            <Button text="🔍" styleClass="search-button" onAction="#searchBooks" />
+                            <Region HBox.hgrow="ALWAYS" />
+                            <Button text="Refresh" styleClass="secondary-button" onAction="#refreshBooks" />
+                        </HBox>
+
+                        <TableView fx:id="booksTable" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn text="ID" fx:id="idColumn" />
+                                <TableColumn text="Cover" fx:id="coverColumn" />
+                                <TableColumn text="Title" fx:id="titleColumn" />
+                                <TableColumn text="ISBN" fx:id="isbnColumn" />
+                                <TableColumn text="Publisher" fx:id="publisherColumn" />
+                                <TableColumn text="Year" fx:id="yearColumn" />
+                                <TableColumn text="Copies" fx:id="copiesColumn" />
+                                <TableColumn text="Actions" fx:id="actionsColumn" />
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </VBox>
+            </Tab>
+
+            <Tab text="👥 Users Management" closable="false">
+                <VBox spacing="20" style="-fx-padding: 20;">
+
+                    <VBox styleClass="form-container" spacing="15">
+                        <Label text="Add New User" styleClass="form-title" />
+
+                        <GridPane hgap="15" vgap="10">
+                            <Label text="Username:" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="form-label" />
+                            <TextField fx:id="userUsernameField" promptText="Enter username" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="text-field" />
+
+                            <Label text="Password:" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="form-label" />
+                            <PasswordField fx:id="userPasswordField" promptText="Enter password" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="text-field" />
+
+                            <Label text="First Name:" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="form-label" />
+                            <TextField fx:id="userFirstNameField" promptText="Enter first name" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="text-field" />
+
+                            <Label text="Last Name:" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="form-label" />
+                            <TextField fx:id="userLastNameField" promptText="Enter last name" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="text-field" />
+
+                            <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="form-label" />
+                            <TextField fx:id="userEmailField" promptText="Enter email" GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="text-field" />
+
+                            <Label text="Role:" GridPane.columnIndex="0" GridPane.rowIndex="5" styleClass="form-label" />
+                            <ComboBox fx:id="userRoleCombo" promptText="Select role" GridPane.columnIndex="1" GridPane.rowIndex="5" styleClass="text-field" />
+                        </GridPane>
+
+                        <HBox spacing="15" alignment="CENTER">
+                            <Button text="Add User" styleClass="button" onAction="#addUser" />
+                            <Button text="Clear Form" styleClass="secondary-button" onAction="#clearUserForm" />
+                        </HBox>
+                    </VBox>
+
+                    <VBox styleClass="card" spacing="15">
+                        <Label text="System Users" styleClass="card-title" />
+
+                        <TableView fx:id="usersTable" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn text="ID" fx:id="userIdColumn" />
+                                <TableColumn text="Username" fx:id="userUsernameColumn" />
+                                <TableColumn text="Name" fx:id="userNameColumn" />
+                                <TableColumn text="Email" fx:id="userEmailColumn" />
+                                <TableColumn text="Role" fx:id="userRoleColumn" />
+                                <TableColumn text="Actions" fx:id="userActionsColumn" />
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </VBox>
+            </Tab>
+
+            <Tab text="📊 Reports &amp; Analytics" closable="false">
+                <VBox spacing="20" style="-fx-padding: 20;">
+
+                    <HBox spacing="20">
+                        <VBox styleClass="card" style="-fx-pref-width: 200;">
+                            <Label text="📚" style="-fx-font-size: 32px; -fx-alignment: center;" />
+                            <Label fx:id="totalBooksLabel" text="Total Books: 0" styleClass="card-title" />
+                        </VBox>
+
+                        <VBox styleClass="card" style="-fx-pref-width: 200;">
+                            <Label text="👥" style="-fx-font-size: 32px; -fx-alignment: center;" />
+                            <Label fx:id="totalUsersLabel" text="Total Users: 0" styleClass="card-title" />
+                        </VBox>
+
+                        <VBox styleClass="card" style="-fx-pref-width: 200;">
+                            <Label text="📖" style="-fx-font-size: 32px; -fx-alignment: center;" />
+                            <Label fx:id="activeLoansLabel" text="Active Loans: 0" styleClass="card-title" />
+                        </VBox>
+
+                        <VBox styleClass="card" style="-fx-pref-width: 200;">
+                            <Label text="⏰" style="-fx-font-size: 32px; -fx-alignment: center;" />
+                            <Label fx:id="overdueLabel" text="Overdue: 0" styleClass="card-title" />
+                        </VBox>
+                    </HBox>
+
+                    <VBox styleClass="card" spacing="15">
+                        <Label text="Recent Activity" styleClass="card-title" />
+                        <TableView fx:id="activityTable" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn text="Date" fx:id="activityDateColumn" />
+                                <TableColumn text="Action" fx:id="activityActionColumn" />
+                                <TableColumn text="User" fx:id="activityUserColumn" />
+                                <TableColumn text="Details" fx:id="activityDetailsColumn" />
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </VBox>
+            </Tab>
+
+        </TabPane>
+    </VBox>
+
+</StackPane>
