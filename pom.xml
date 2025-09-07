@@ -158,7 +158,7 @@
                         <!-- Run with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.tuvarna.bg.library/com.tuvarna.bg.library.HelloApplication</mainClass>
+                            <mainClass>com.tuvarna.bg.library/com.tuvarna.bg.library.LibraryApplication</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>

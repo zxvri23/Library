@@ -14,8 +14,14 @@ module com.tuvarna.bg.library {
     requires java.desktop;
     requires java.sql;
 
-    opens com.tuvarna.bg.library to javafx.fxml;
+    // Application entry
     exports com.tuvarna.bg.library;
+
+    // Controllers
     exports com.tuvarna.bg.library.controllers;
     opens com.tuvarna.bg.library.controllers to javafx.fxml;
+
+    // Entities (need both for TableView reflection & API visibility)
+    exports com.tuvarna.bg.library.entity;
+    opens com.tuvarna.bg.library.entity to javafx.base;
 }

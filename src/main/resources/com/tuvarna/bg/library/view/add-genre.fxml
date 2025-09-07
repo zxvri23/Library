@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<StackPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.tuvarna.bg.library.controllers.AddGenreController"
+           styleClass="dashboard-container">
+
+    <VBox styleClass="header" style="-fx-background-color: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 0);">
+        <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 15 20;">
+            <Label text="📚" style="-fx-font-size: 24px;" />
+            <Label text="Add New Genre" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button text="Back" styleClass="secondary-button" onAction="#handleBack" />
+        </HBox>
+    </VBox>
+
+    <VBox style="-fx-translate-y: 60; -fx-padding: 40;" alignment="CENTER">
+        <VBox styleClass="form-container" spacing="20" style="-fx-pref-width: 500;">
+            <Label text="Genre Information" styleClass="form-title" style="-fx-alignment: center;" />
+
+            <GridPane hgap="15" vgap="15" alignment="CENTER">
+                <Label text="Genre Name:" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="form-label" />
+                <TextField fx:id="genreNameField" promptText="Enter genre name" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="text-field" />
+
+                <Label text="Description:" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="form-label" />
+                <TextArea fx:id="descriptionArea" promptText="Enter genre description" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="text-field"
+                          prefRowCount="3" wrapText="true" />
+            </GridPane>
+
+            <HBox spacing="15" alignment="CENTER">
+                <Button text="Add Genre" styleClass="button" onAction="#addGenre" />
+                <Button text="Clear Form" styleClass="secondary-button" onAction="#clearForm" />
+            </HBox>
+
+            <Label fx:id="messageLabel" text="" style="-fx-alignment: center;" />
+        </VBox>
+    </VBox>
+
+</StackPane>

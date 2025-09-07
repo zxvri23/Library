@@ -1,12 +1,11 @@
 package com.tuvarna.bg.library.entity;
 
-import jdk.jfr.DataAmount;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.util.List;
 
-@DataAmount
+@Data
 @NoArgsConstructor
 @Getter
 @Setter

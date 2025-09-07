@@ -8,9 +8,9 @@ import java.util.logging.Level;
 
 public class DatabaseUtil {
     private static final Logger LOGGER = Logger.getLogger(DatabaseUtil.class.getName());
-    private static final String URL = "jdbc:postgresql://localhost:5432/library";
+    private static final String URL = "jdbc:postgresql://localhost:5432/postgres";
     private static final String USERNAME = "postgres";
-    private static final String PASSWORD = "password";
+    private static final String PASSWORD = "zeri";
 
     static {
         try {

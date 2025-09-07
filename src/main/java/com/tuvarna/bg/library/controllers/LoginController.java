@@ -1,6 +1,6 @@
 package com.tuvarna.bg.library.controllers;
 
-import com.tuvarna.bg.library.entity.RoleEntity;
+import com.tuvarna.bg.library.dao.UserDAO;
 import com.tuvarna.bg.library.entity.UserEntity;
 import com.tuvarna.bg.library.util.DatabaseUtil;
 import javafx.fxml.FXML;
@@ -14,75 +14,72 @@ import javafx.stage.StageStyle;
 import java.io.IOException;
 import java.sql.*;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 public class LoginController {
+    private static final Logger LOGGER = Logger.getLogger(LoginController.class.getName());
 
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
     @FXML private Button loginButton;
     @FXML private Label errorLabel;
 
+    private UserDAO userDAO;
+
     @FXML
     public void initialize() {
-        passwordField.setOnAction(event -> handleLogin());
-        insertDemoData();
+        errorLabel.setText("");
+        errorLabel.setVisible(false);
+        userDAO = new UserDAO();
+        LOGGER.info("LoginController initialized");
+
+        // pressing Enter in password field triggers login
+        passwordField.setOnAction(e -> handleLogin());
+
+        if (!DatabaseUtil.testConnection()) {
+            showError("Database connection failed. Please check your database settings.");
+            loginButton.setDisable(true);
+        }
+
+        insertDemoData(); // ensures demo users exist
     }
 
     @FXML
     private void handleLogin() {
-        String username = usernameField.getText().trim();
-        String password = passwordField.getText().trim();
+        LOGGER.info("handleLogin() fired");
+        final String username = usernameField.getText().trim();
+        final String password = passwordField.getText();
 
         if (username.isEmpty() || password.isEmpty()) {
-            showError("Please enter both username and password");
+            showError("Please enter both username and password.");
             return;
         }
 
-        try {
-            UserEntity user = authenticateUser(username, password);
-            if (user != null) {
-                openDashboard(user);
-            } else {
-                showError("Invalid username or password");
-            }
-        } catch (SQLException e) {
-            showError("Database error: " + e.getMessage());
-            e.printStackTrace();
+        if (!DatabaseUtil.testConnection()) {
+            showError("Cannot connect to database. Please try again later.");
+            return;
         }
+
+        UserEntity user = userDAO.findByUsernameAndPassword(username, password);
+        if (user == null) {
+            LOGGER.warning("No user found or wrong password for username=" + username);
+            showError("Invalid username or password.");
+            usernameField.requestFocus();
+            passwordField.clear();
+            return;
+        }
+
+        if (user.getRole() == null || user.getRole().getName() == null) {
+            LOGGER.severe("User has no role loaded. Check DAO JOIN for roles.");
+            showError("Your account has no role assigned. Contact admin.");
+            return;
+        }
+
+        final String role = user.getRole().getName();
+        LOGGER.info("Authenticated user " + user.getUsername() + " with role=" + role);
+        openDashboard(user);
     }
 
-    private UserEntity authenticateUser(String username, String password) throws SQLException {
-        String sql = "SELECT u.*, r.name as role_name FROM users u " +
-                "JOIN roles r ON u.roles_id = r.roles_id " +
-                "WHERE u.username = ? AND u.password = ?";
-
-        try (Connection conn = DatabaseUtil.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, username);
-            stmt.setString(2, password);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    UserEntity user = new UserEntity();
-                    user.setUsersId(rs.getInt("users_id"));
-                    user.setUsername(rs.getString("username"));
-                    user.setPassword(rs.getString("password"));
-                    user.setFirstName(rs.getString("first_name"));
-                    user.setLastName(rs.getString("last_name"));
-                    user.setEmail(rs.getString("email"));
-
-                    RoleEntity role = new RoleEntity();
-                    role.setRolesId(rs.getInt("roles_id"));
-                    role.setName(rs.getString("role_name"));
-                    user.setRole(role);
-
-                    return user;
-                }
-            }
-        }
-        return null;
-    }
 
     private void openDashboard(UserEntity user) {
         try {
@@ -91,15 +88,15 @@ public class LoginController {
 
             switch (user.getRole().getName()) {
                 case "ADMIN":
-                    fxmlFile = "/com/tuvarna/bg/library/view/AdminDashboard.fxml";
+                    fxmlFile = "/com/tuvarna/bg/library/view/admin-dashboard.fxml";
                     title = "Admin Dashboard - " + user.getFullName();
                     break;
                 case "MANAGER":
-                    fxmlFile = "/com/tuvarna/bg/library/view/ManagerDashboard.fxml";
+                    fxmlFile = "/com/tuvarna/bg/library/view/manager-dashboard.fxml";
                     title = "Manager Dashboard - " + user.getFullName();
                     break;
                 case "CLIENT":
-                    fxmlFile = "/com/tuvarna/bg/library/view/ClientDashboard.fxml";
+                    fxmlFile = "/com/tuvarna/bg/library/view/client-dashboard.fxml";
                     title = "Client Dashboard - " + user.getFullName();
                     break;
                 default:
@@ -107,17 +104,26 @@ public class LoginController {
                     return;
             }
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
+            java.net.URL url = getClass().getResource(fxmlFile);
+            if (url == null) {
+                String msg = "FXML not found on classpath: " + fxmlFile +
+                        "\nExpected under: src/main/resources" + fxmlFile;
+                LOGGER.severe(msg);
+                showError(msg);
+                return;
+            }
+
+            FXMLLoader loader = new FXMLLoader(url);
             Parent root = loader.load();
 
-            // Pass user data to dashboard controller
             Object controller = loader.getController();
             if (controller instanceof DashboardController) {
                 ((DashboardController) controller).setCurrentUser(user);
             }
 
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/com/tuvarna/bg/library/css/styles.css")).toExternalForm());
+            java.net.URL css = getClass().getResource("/com/tuvarna/bg/library/css/styles.css");
+            if (css != null) scene.getStylesheets().add(css.toExternalForm());
 
             Stage stage = new Stage();
             stage.setTitle(title);
@@ -125,31 +131,31 @@ public class LoginController {
             stage.initStyle(StageStyle.UNDECORATED);
             stage.setResizable(false);
             stage.setMaximized(true);
-            ((Stage) loginButton.getScene().getWindow()).close();
+
+            // Close login window
+            Stage loginStage = (Stage) loginButton.getScene().getWindow();
+            if (loginStage != null) loginStage.close();
 
             stage.show();
 
         } catch (IOException e) {
+            LOGGER.severe("Error loading dashboard: " + e.getMessage());
             showError("Error loading dashboard: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
+
     private void showError(String message) {
         errorLabel.setText(message);
+        errorLabel.setStyle("-fx-text-fill: #c0392b; -fx-font-size: 14px;");
         errorLabel.setVisible(true);
-
-        // Auto-hide error after 5 seconds
-        new Thread(() -> {
-            try {
-                Thread.sleep(5000);
-                javafx.application.Platform.runLater(() -> errorLabel.setVisible(false));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }).start();
+        LOGGER.warning(message);
     }
 
+    /**
+     * Inserts demo accounts (admin, manager, client) if not already present.
+     */
     private void insertDemoData() {
         try (Connection conn = DatabaseUtil.getConnection()) {
             String checkSql = "SELECT COUNT(*) FROM users WHERE username IN ('admin', 'manager', 'client')";
@@ -161,27 +167,23 @@ public class LoginController {
                             "INSERT INTO users (username, password, first_name, last_name, email, roles_id) " +
                                     "VALUES ('admin', 'admin123', 'Admin', 'User', 'admin@library.com', " +
                                     "(SELECT roles_id FROM roles WHERE name = 'ADMIN'))",
-
                             "INSERT INTO users (username, password, first_name, last_name, email, roles_id) " +
                                     "VALUES ('manager', 'manager123', 'Manager', 'User', 'manager@library.com', " +
                                     "(SELECT roles_id FROM roles WHERE name = 'MANAGER'))",
-
                             "INSERT INTO users (username, password, first_name, last_name, email, roles_id) " +
                                     "VALUES ('client', 'client123', 'Client', 'User', 'client@library.com', " +
                                     "(SELECT roles_id FROM roles WHERE name = 'CLIENT'))"
                     };
-
                     for (String sql : demoUsers) {
                         try (Statement insertStmt = conn.createStatement()) {
                             insertStmt.execute(sql);
                         }
                     }
-
-                    System.out.println("Demo data inserted successfully");
+                    LOGGER.info("Demo data inserted successfully");
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error inserting demo data: " + e.getMessage());
+            LOGGER.severe("Error inserting demo data: " + e.getMessage());
         }
     }
 }
