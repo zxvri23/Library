@@ -14,6 +14,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.io.IOException;
+import java.net.URL;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.Objects;
@@ -427,27 +428,44 @@ public class ManagerDashboardController implements DashboardController {
     @FXML
     private void handleLogout() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/tuvarna/bg/library/view/LoginView.fxml"));
+            // Reuse the same window
+            Stage stage = (Stage) userLabel.getScene().getWindow();
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/com/tuvarna/bg/library/view/login-view.fxml"));
             Parent root = loader.load();
 
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/com/tuvarna/bg/library/css/styles.css")).toExternalForm());
+            URL css = getClass().getResource("/com/tuvarna/bg/library/css/styles.css");
+            if (css != null) scene.getStylesheets().add(css.toExternalForm());
 
-            Stage stage = new Stage();
-            stage.setTitle("Library Management System - Login");
             stage.setScene(scene);
-            stage.initStyle(StageStyle.UNDECORATED);
+
+            // Force maximized login
+            stage.setMaximized(true);
             stage.setResizable(false);
+            stage.centerOnScreen();
 
-            // Close current window
-            ((Stage) userLabel.getScene().getWindow()).close();
+            // ESC on login ⇒ exit app
+            scene.setOnKeyPressed(e -> {
+                if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                    javafx.application.Platform.exit();
+                }
+            });
 
-            stage.show();
+            // Re-wire custom chrome on the new scene
+            Button closeBtn = (Button) root.lookup("#closeButton");
+            if (closeBtn != null) closeBtn.setOnAction(e -> javafx.application.Platform.exit());
+            Button minimizeBtn = (Button) root.lookup("#minimizeButton");
+            if (minimizeBtn != null) minimizeBtn.setOnAction(e -> stage.setIconified(true));
 
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            // Optional: show an alert to the user
+            // new Alert(Alert.AlertType.ERROR, "Failed to load login screen:\n" + ex.getMessage()).showAndWait();
         }
     }
+
 
     private void showAlert(String title, String content, Alert.AlertType alertType) {
         Alert alert = new Alert(alertType);

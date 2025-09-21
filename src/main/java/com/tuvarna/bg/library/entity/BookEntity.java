@@ -8,7 +8,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
-@Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class BookEntity {
 
@@ -37,5 +36,8 @@ public class BookEntity {
     @Override
     public String toString() {
         return title;
+    }
+
+    public void setCopies(int copyCount) {
     }
 }
