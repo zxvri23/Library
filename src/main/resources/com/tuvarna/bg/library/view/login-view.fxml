@@ -3,58 +3,49 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<StackPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="com.tuvarna.bg.library.controllers.LoginController"
-           styleClass="root">
+<StackPane styleClass="root" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.tuvarna.bg.library.controllers.LoginController">
 
     <!-- Transparent background layers (non-clickable) -->
-    <VBox styleClass="background-pattern" style="-fx-background-color: rgba(255, 255, 255, 0.05);"
-          mouseTransparent="true">
-        <HBox styleClass="window-controls" alignment="TOP_RIGHT" mouseTransparent="false">
-            <Button fx:id="minimizeButton" text="−" styleClass="minimize-button"/>
-            <Button fx:id="closeButton" text="×" styleClass="close-button"/>
+    <VBox mouseTransparent="true" style="-fx-background-color: rgba(255, 255, 255, 0.05);" styleClass="background-pattern">
+        <HBox alignment="TOP_RIGHT" mouseTransparent="false" styleClass="window-controls">
+            <Button fx:id="minimizeButton" styleClass="minimize-button" text="−" />
+            <Button fx:id="closeButton" styleClass="close-button" text="×" />
         </HBox>
     </VBox>
 
-    <VBox styleClass="login-container" maxWidth="400" maxHeight="500" alignment="CENTER" spacing="20">
+    <VBox alignment="CENTER" maxHeight="500" maxWidth="400" spacing="20" styleClass="login-container">
         <VBox alignment="CENTER" spacing="10">
-            <Label text="📚" style="-fx-font-size: 48px;"/>
-            <Label text="Library Management System" styleClass="login-title"/>
-            <Label text="Sign in to your account" styleClass="login-subtitle"/>
+            <Label style="-fx-font-size: 48px;" text="📚" />
+            <Label styleClass="login-title" text="Library Management System" />
+            <Label styleClass="login-subtitle" text="Sign in to your account" />
         </VBox>
 
-        <VBox spacing="15" maxWidth="300">
+        <VBox maxWidth="300" spacing="15">
             <VBox spacing="5">
-                <Label text="Username" styleClass="form-label"/>
-                <TextField fx:id="usernameField" promptText="Enter your username" styleClass="text-field"/>
+                <Label styleClass="form-label" text="Username" />
+                <TextField fx:id="usernameField" promptText="Enter your username" styleClass="text-field" />
             </VBox>
 
             <VBox spacing="5">
-                <Label text="Password" styleClass="form-label"/>
-                <PasswordField fx:id="passwordField" promptText="Enter your password" styleClass="text-field"/>
+                <Label styleClass="form-label" text="Password" />
+                <HBox alignment="CENTER_LEFT" spacing="5">
+                    <PasswordField fx:id="passwordField" promptText="Enter your password" styleClass="text-field" HBox.hgrow="ALWAYS" />
+                </HBox>
             </VBox>
 
-            <Button fx:id="loginButton" text="Sign In" styleClass="button"
-                    onAction="#handleLogin" defaultButton="true"/>
+            <Button fx:id="loginButton" defaultButton="true" onAction="#handleLogin" styleClass="button" text="Sign In" />
 
-            <Label fx:id="errorLabel" text="" style="-fx-text-fill: #dc3545; -fx-font-size: 12px;"
-                   alignment="CENTER" visible="false"/>
+            <Label fx:id="errorLabel" alignment="CENTER" style="-fx-text-fill: #dc3545; -fx-font-size: 12px;" text="" visible="false" />
         </VBox>
 
-        <VBox alignment="CENTER" spacing="10">
-            <Label text="Demo Credentials:" style="-fx-text-fill: #6c757d; -fx-font-size: 12px;"/>
-            <Label text="Admin: admin/admin123" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
-            <Label text="Manager: manager/manager123" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
-            <Label text="Client: client/client123" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
-        </VBox>
     </VBox>
 
-    <VBox alignment="BOTTOM_LEFT" style="-fx-translate-x: -50; -fx-translate-y: -50;" mouseTransparent="true">
-        <Label text="●" style="-fx-text-fill: rgba(255, 255, 255, 0.1); -fx-font-size: 200;"/>
+    <VBox alignment="BOTTOM_LEFT" mouseTransparent="true" style="-fx-translate-x: -50; -fx-translate-y: -50;">
+        <Label style="-fx-text-fill: rgba(255, 255, 255, 0.1); -fx-font-size: 200;" text="●" />
     </VBox>
 
-    <VBox alignment="TOP_RIGHT" style="-fx-translate-x: 50; -fx-translate-y: 50;" mouseTransparent="true">
-        <Label text="●" style="-fx-text-fill: rgba(255, 255, 255, 0.1); -fx-font-size: 150;"/>
+    <VBox alignment="TOP_RIGHT" mouseTransparent="true" style="-fx-translate-x: 50; -fx-translate-y: 50;">
+        <Label style="-fx-text-fill: rgba(255, 255, 255, 0.1); -fx-font-size: 150;" text="●" />
     </VBox>
 
 </StackPane>

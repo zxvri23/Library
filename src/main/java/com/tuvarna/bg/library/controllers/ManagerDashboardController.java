@@ -2,67 +2,90 @@ package com.tuvarna.bg.library.controllers;
 
 import com.tuvarna.bg.library.entity.*;
 import com.tuvarna.bg.library.util.DatabaseUtil;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.StageStyle;
 
 import java.io.IOException;
 import java.net.URL;
 import java.sql.*;
 import java.time.LocalDate;
-import java.util.Objects;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ManagerDashboardController implements DashboardController {
 
-    @FXML
-    private Label userLabel;
+    @FXML private Label userLabel;
 
-    @FXML
-    private ComboBox<UserEntity> customerCombo;
-    @FXML
-    private ComboBox<BookCopyEntity> copyCombo;
-    @FXML
-    private DatePicker dueDatePicker;
-    @FXML
-    private TableView<LoanEntity> loansTable;
-    @FXML
-    private TableColumn<LoanEntity, Integer> loanIdColumn;
-    @FXML
-    private TableColumn<LoanEntity, String> loanCustomerColumn;
-    @FXML
-    private TableColumn<LoanEntity, String> loanBookColumn;
-    @FXML
-    private TableColumn<LoanEntity, String> loanBorrowedColumn;
-    @FXML
-    private TableColumn<LoanEntity, String> loanDueColumn;
-    @FXML
-    private TableColumn<LoanEntity, String> loanStatusColumn;
-    @FXML
-    private TableView<ReservationEntity> reservationsTable;
-    @FXML
-    private TableColumn<ReservationEntity, Integer> reservationIdColumn;
-    @FXML
-    private TableColumn<ReservationEntity, String> reservationCustomerColumn;
-    @FXML
-    private TableColumn<ReservationEntity, String> reservationBookColumn;
-    @FXML
-    private TableColumn<ReservationEntity, String> reservationCreatedColumn;
-    @FXML
-    private TableColumn<ReservationEntity, String> reservationStatusColumn;
-    @FXML
-    private TextField newUsernameField, newFirstNameField, newLastNameField, newEmailField;
-    @FXML
-    private PasswordField newPasswordField;
+    @FXML private ComboBox<UserEntity> customerCombo;
+    @FXML private ComboBox<BookCopyEntity> copyCombo;
+    @FXML private DatePicker dueDatePicker;
+
+    @FXML private TableView<LoanEntity> loansTable;
+    @FXML private TableColumn<LoanEntity, Integer> loanIdColumn;
+    @FXML private TableColumn<LoanEntity, String> loanCustomerColumn;
+    @FXML private TableColumn<LoanEntity, String> loanBookColumn;
+    @FXML private TableColumn<LoanEntity, String> loanBorrowedColumn;
+    @FXML private TableColumn<LoanEntity, String> loanDueColumn;
+    @FXML private TableColumn<LoanEntity, String> loanStatusColumn;
+
+    @FXML private TableView<ReservationEntity> reservationsTable;
+    @FXML private TableColumn<ReservationEntity, Integer> reservationIdColumn;
+    @FXML private TableColumn<ReservationEntity, String> reservationCustomerColumn;
+    @FXML private TableColumn<ReservationEntity, String> reservationBookColumn;
+    @FXML private TableColumn<ReservationEntity, String> reservationCreatedColumn;
+    @FXML private TableColumn<ReservationEntity, String> reservationStatusColumn;
+
+    @FXML private TextField newUsernameField, newFirstNameField, newLastNameField, newEmailField;
+    @FXML private PasswordField newPasswordField;
 
     private UserEntity currentUser;
 
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    // ---------- Validation helpers ----------
+    private static void markError(Control c) { if (c != null) c.setStyle("-fx-border-color:#e74c3c;-fx-border-radius:6;"); }
+    private static void clearError(Control c) { if (c != null) c.setStyle(""); }
+
+    // first/last name: must start with uppercase letter, only letters after that (Unicode aware)
+    private static boolean isValidName(String s) {
+        return s != null && s.trim().matches("\\p{Lu}[\\p{L}]*");
+    }
+
+    // username must NOT be numbers only
+    private static boolean isNumbersOnly(String s) {
+        return s != null && s.trim().matches("\\d+");
+    }
+
+    // email must end with @gmail.com (case-insensitive)
+    private static boolean isGmail(String s) {
+        return s != null && s.trim().toLowerCase().endsWith("@gmail.com");
+    }
+
+    // DB check for username uniqueness (case-insensitive)
+    private boolean usernameExists(String username) {
+        if (username == null || username.trim().isEmpty()) return false;
+        String sql = "SELECT 1 FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setString(1, username.trim());
+            try (ResultSet rs = st.executeQuery()) { return rs.next(); }
+        } catch (SQLException e) {
+            // If DB fails, be conservative and say it exists to prevent duplicates.
+            e.printStackTrace();
+            return true;
+        }
+    }
     @FXML
     public void initialize() {
         setupTableColumns();
@@ -70,21 +93,181 @@ public class ManagerDashboardController implements DashboardController {
         loadInitialData();
     }
 
+    /* --------------------------------------------------------
+     * Columns: fit width; remove Actions; friendly cell content
+     * -------------------------------------------------------- */
     private void setupTableColumns() {
-        loanIdColumn.setCellValueFactory(new PropertyValueFactory<>("loansId"));
-        loanCustomerColumn.setCellValueFactory(new PropertyValueFactory<>("user"));
-        loanBookColumn.setCellValueFactory(new PropertyValueFactory<>("copy"));
-        loanBorrowedColumn.setCellValueFactory(new PropertyValueFactory<>("borrowedAt"));
-        loanDueColumn.setCellValueFactory(new PropertyValueFactory<>("dueDate"));
-        loanStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        /* ===== Loans table: fill width ===== */
+        loansTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
+        // "weights" so constrained policy distributes space nicely
+        loanIdColumn.setMaxWidth(1f * Integer.MAX_VALUE * 1);          // ~8-10%
+        loanCustomerColumn.setMaxWidth(1f * Integer.MAX_VALUE * 2);     // ~18-20%
+        loanBookColumn.setMaxWidth(1f * Integer.MAX_VALUE * 2);         // ~18-20%
+        loanBorrowedColumn.setMaxWidth(1f * Integer.MAX_VALUE * 2);     // ~18-20%
+        loanDueColumn.setMaxWidth(1f * Integer.MAX_VALUE * 1);          // ~8-10%
+        loanStatusColumn.setMaxWidth(1f * Integer.MAX_VALUE * 1);       // ~8-10%
+
+        // Remove any "Actions" column if present in FXML
+        removeActionsColumn(loansTable);
+
+        // Value factories (friendly strings)
+        loanIdColumn.setCellValueFactory(new PropertyValueFactory<>("loansId"));
+
+        loanCustomerColumn.setCellValueFactory(cd -> {
+            UserEntity u = cd.getValue().getUser();
+            String s = (u == null) ? "" : (u.getFullName() != null ? u.getFullName() : u.getUsername());
+            return new SimpleStringProperty(s);
+        });
+
+        loanBookColumn.setCellValueFactory(cd -> {
+            BookCopyEntity copy = cd.getValue().getCopy();
+            String s = "";
+            if (copy != null) {
+                BookEntity b = copy.getBook();
+                if (b != null && b.getTitle() != null && !b.getTitle().isEmpty()) {
+                    s = b.getTitle();
+                } else {
+                    s = "Copy #" + copy.getCopiesId();
+                }
+            }
+            return new SimpleStringProperty(s);
+        });
+
+        loanBorrowedColumn.setCellValueFactory(cd -> {
+            LocalDateTime dt = cd.getValue().getBorrowedAt();
+            return new SimpleStringProperty(dt == null ? "" : DATETIME_FMT.format(dt));
+        });
+
+        loanDueColumn.setCellValueFactory(cd -> {
+            LocalDate d = cd.getValue().getDueDate();
+            return new SimpleStringProperty(d == null ? "" : DATE_FMT.format(d));
+        });
+
+        // Computed status: Returned / Overdue / Active (with color)
+        loanStatusColumn.setCellValueFactory(cd -> {
+            LoanEntity l = cd.getValue();
+            String status;
+            if (l == null) {
+                status = "";
+            } else if (l.getReturnedAt() != null) {
+                status = "Returned";
+            } else {
+                LocalDate due = l.getDueDate();
+                status = (due != null && due.isBefore(LocalDate.now())) ? "Overdue" : "Active";
+            }
+            return new SimpleStringProperty(status);
+        });
+
+        loanStatusColumn.setCellFactory(col -> new TableCell<LoanEntity, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                setText(item);
+                switch (item) {
+                    case "Overdue":
+                        setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+                        break;
+                    case "Returned":
+                        setStyle("-fx-text-fill: #7f8c8d;");
+                        break;
+                    default: // Active
+                        setStyle("-fx-text-fill: #27ae60;");
+                }
+            }
+        });
+
+        /* ===== Reservations table: fill width ===== */
+        reservationsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        reservationIdColumn.setMaxWidth(1f * Integer.MAX_VALUE * 1);
+        reservationCustomerColumn.setMaxWidth(1f * Integer.MAX_VALUE * 2);
+        reservationBookColumn.setMaxWidth(1f * Integer.MAX_VALUE * 2);
+        reservationCreatedColumn.setMaxWidth(1f * Integer.MAX_VALUE * 2);
+        reservationStatusColumn.setMaxWidth(1f * Integer.MAX_VALUE * 1);
+
+        removeActionsColumn(reservationsTable);
+
+        // Value factories (friendly strings)
         reservationIdColumn.setCellValueFactory(new PropertyValueFactory<>("reservationsId"));
-        reservationCustomerColumn.setCellValueFactory(new PropertyValueFactory<>("user"));
-        reservationBookColumn.setCellValueFactory(new PropertyValueFactory<>("book"));
-        reservationCreatedColumn.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
+
+        reservationCustomerColumn.setCellValueFactory(cd -> {
+            UserEntity u = cd.getValue().getUser();
+            String s = (u == null) ? "" : (u.getFullName() != null ? u.getFullName() : u.getUsername());
+            return new SimpleStringProperty(s);
+        });
+
+        reservationBookColumn.setCellValueFactory(cd -> {
+            BookEntity b = cd.getValue().getBook();
+            String s = (b == null) ? "" : (b.getTitle() != null ? b.getTitle() : ("Book #" + b.getBooksId()));
+            return new SimpleStringProperty(s);
+        });
+
+        reservationCreatedColumn.setCellValueFactory(cd -> {
+            LocalDateTime dt = cd.getValue().getCreatedAt();
+            return new SimpleStringProperty(dt == null ? "" : DATETIME_FMT.format(dt));
+        });
+
         reservationStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        reservationStatusColumn.setCellFactory(col -> new TableCell<ReservationEntity, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                setText(item);
+                switch (item) {
+                    case "PENDING":
+                        setStyle("-fx-text-fill: #f39c12;");
+                        break;
+                    case "READY":
+                        setStyle("-fx-text-fill: #27ae60;");
+                        break;
+                    case "COMPLETED":
+                        setStyle("-fx-text-fill: #7f8c8d;");
+                        break;
+                    case "CANCELLED":
+                        setStyle("-fx-text-fill: #e74c3c;");
+                        break;
+                    default:
+                        setStyle("");
+                }
+            }
+        });
+
+        // Double-click to toggle reservation status
+        reservationsTable.setRowFactory(tv -> {
+            TableRow<ReservationEntity> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    ReservationEntity reservation = row.getItem();
+                    toggleReservationStatus(reservation);
+                }
+            });
+            return row;
+        });
     }
 
+    private static void removeActionsColumn(TableView<?> table) {
+        // Remove any column with header text exactly "Actions"
+        List<TableColumn<?, ?>> toRemove = new ArrayList<>();
+        for (TableColumn<?, ?> c : table.getColumns()) {
+            if ("Actions".equalsIgnoreCase(c.getText())) {
+                toRemove.add(c);
+            }
+        }
+        table.getColumns().removeAll(toRemove);
+    }
+
+    /* ------------------------- Combo boxes ------------------------- */
     private void setupComboBoxes() {
         loadCustomers();
         loadAvailableCopies();
@@ -95,11 +278,10 @@ public class ManagerDashboardController implements DashboardController {
         refreshReservations();
     }
 
+    /* ------------------------- Create Loan ------------------------- */
     @FXML
     private void createLoan() {
-        if (!validateLoanForm()) {
-            return;
-        }
+        if (!validateLoanForm()) return;
 
         try {
             String sql = "INSERT INTO loans (users_id, staff_id, copy_id, due_date) VALUES (?, ?, ?, ?)";
@@ -134,58 +316,28 @@ public class ManagerDashboardController implements DashboardController {
             showAlert("Validation Error", "Please select a customer", Alert.AlertType.WARNING);
             return false;
         }
-
         if (copyCombo.getValue() == null) {
             showAlert("Validation Error", "Please select a book copy", Alert.AlertType.WARNING);
             return false;
         }
-
         if (dueDatePicker.getValue() == null || dueDatePicker.getValue().isBefore(LocalDate.now())) {
             showAlert("Validation Error", "Please select a valid due date", Alert.AlertType.WARNING);
             return false;
         }
-
         return true;
     }
 
     @FXML
     private void clearLoanForm() {
-        customerCombo.setValue(null);
-        copyCombo.setValue(null);
+        customerCombo.getSelectionModel().clearSelection();
+        copyCombo.getSelectionModel().clearSelection();
         dueDatePicker.setValue(null);
     }
 
-    @FXML
-    private void processReservation() {
-        ReservationEntity selectedReservation = reservationsTable.getSelectionModel().getSelectedItem();
-        if (selectedReservation == null) {
-            showAlert("Warning", "Please select a reservation to process", Alert.AlertType.WARNING);
-            return;
-        }
-
-        try {
-            String sql = "UPDATE reservations SET status = 'READY' WHERE reservations_id = ?";
-            try (Connection conn = DatabaseUtil.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-                stmt.setInt(1, selectedReservation.getReservationsId());
-                stmt.executeUpdate();
-
-                showAlert("Success", "Reservation marked as ready!", Alert.AlertType.INFORMATION);
-                refreshReservations();
-            }
-
-        } catch (SQLException e) {
-            showAlert("Error", "Failed to process reservation: " + e.getMessage(), Alert.AlertType.ERROR);
-            e.printStackTrace();
-        }
-    }
-
+    /* -------------------- Customer registration -------------------- */
     @FXML
     private void registerCustomer() {
-        if (!validateCustomerForm()) {
-            return;
-        }
+        if (!validateCustomerForm()) return;
 
         try {
             String sql = "INSERT INTO users (username, password, first_name, last_name, email, roles_id) " +
@@ -214,28 +366,59 @@ public class ManagerDashboardController implements DashboardController {
     }
 
     private boolean validateCustomerForm() {
-        if (newUsernameField.getText().trim().isEmpty()) {
-            showAlert("Validation Error", "Please enter a username", Alert.AlertType.WARNING);
+        // clear previous red borders
+        clearError(newUsernameField);
+        clearError(newPasswordField);
+        clearError(newFirstNameField);
+        clearError(newLastNameField);
+        clearError(newEmailField);
+
+        // Username
+        String username = newUsernameField.getText() == null ? "" : newUsernameField.getText().trim();
+        if (username.isEmpty()) {
+            markError(newUsernameField);
+            showAlert("Validation Error", "Please enter a username.", Alert.AlertType.WARNING);
+            return false;
+        }
+        if (isNumbersOnly(username)) {
+            markError(newUsernameField);
+            showAlert("Validation Error", "Username cannot be numbers only.", Alert.AlertType.WARNING);
+            return false;
+        }
+        if (usernameExists(username)) {
+            markError(newUsernameField);
+            showAlert("Validation Error", "This username is already taken.", Alert.AlertType.WARNING);
             return false;
         }
 
-        if (newPasswordField.getText().isEmpty()) {
-            showAlert("Validation Error", "Please enter a password", Alert.AlertType.WARNING);
+        // Password (just non-empty per your spec)
+        if (newPasswordField.getText() == null || newPasswordField.getText().isEmpty()) {
+            markError(newPasswordField);
+            showAlert("Validation Error", "Please enter a password.", Alert.AlertType.WARNING);
             return false;
         }
 
-        if (newFirstNameField.getText().trim().isEmpty()) {
-            showAlert("Validation Error", "Please enter a first name", Alert.AlertType.WARNING);
+        // First name
+        String firstName = newFirstNameField.getText() == null ? "" : newFirstNameField.getText().trim();
+        if (!isValidName(firstName)) {
+            markError(newFirstNameField);
+            showAlert("Validation Error", "First name must start with an uppercase letter and contain letters only.", Alert.AlertType.WARNING);
             return false;
         }
 
-        if (newLastNameField.getText().trim().isEmpty()) {
-            showAlert("Validation Error", "Please enter a last name", Alert.AlertType.WARNING);
+        // Last name
+        String lastName = newLastNameField.getText() == null ? "" : newLastNameField.getText().trim();
+        if (!isValidName(lastName)) {
+            markError(newLastNameField);
+            showAlert("Validation Error", "Last name must start with an uppercase letter and contain letters only.", Alert.AlertType.WARNING);
             return false;
         }
 
-        if (newEmailField.getText().trim().isEmpty()) {
-            showAlert("Validation Error", "Please enter an email", Alert.AlertType.WARNING);
+        // Email
+        String email = newEmailField.getText() == null ? "" : newEmailField.getText().trim();
+        if (!isGmail(email)) {
+            markError(newEmailField);
+            showAlert("Validation Error", "Email must end with @gmail.com.", Alert.AlertType.WARNING);
             return false;
         }
 
@@ -251,11 +434,14 @@ public class ManagerDashboardController implements DashboardController {
         newEmailField.clear();
     }
 
-    // Data Loading Methods
+    /* --------------------------- Data load ------------------------- */
     private void loadCustomers() {
         try (Connection conn = DatabaseUtil.getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM users WHERE roles_id = (SELECT roles_id FROM roles WHERE name = 'CLIENT') ORDER BY first_name, last_name")) {
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT * FROM users " +
+                             "WHERE roles_id = (SELECT roles_id FROM roles WHERE name = 'CLIENT') " +
+                             "ORDER BY first_name, last_name")) {
 
             ObservableList<UserEntity> customers = FXCollections.observableArrayList();
             while (rs.next()) {
@@ -267,26 +453,25 @@ public class ManagerDashboardController implements DashboardController {
                 customer.setEmail(rs.getString("email"));
                 customers.add(customer);
             }
-
             customerCombo.setItems(customers);
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     private void loadAvailableCopies() {
         try (Connection conn = DatabaseUtil.getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM book_copies WHERE status = 'AVAILABLE' ORDER BY copies_id")) {
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT copies_id, books_id, status, acquired_at FROM book_copies " +
+                             "WHERE status = 'AVAILABLE' ORDER BY copies_id")) {
 
             ObservableList<BookCopyEntity> copies = FXCollections.observableArrayList();
             while (rs.next()) {
                 BookCopyEntity copy = new BookCopyEntity();
                 copy.setCopiesId(rs.getInt("copies_id"));
                 copy.setStatus(rs.getString("status"));
-                copy.setAcquiredAt(rs.getDate("acquired_at") != null ?
-                        rs.getDate("acquired_at").toLocalDate() : null);
+                Date acq = rs.getDate("acquired_at");
+                copy.setAcquiredAt(acq != null ? acq.toLocalDate() : null);
 
                 // Load book information
                 BookEntity book = loadBook(rs.getInt("books_id"));
@@ -294,19 +479,15 @@ public class ManagerDashboardController implements DashboardController {
 
                 copies.add(copy);
             }
-
             copyCombo.setItems(copies);
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     private BookEntity loadBook(int bookId) throws SQLException {
-        String sql = "SELECT * FROM books WHERE books_id = ?";
+        String sql = "SELECT books_id, title, isbn FROM books WHERE books_id = ?";
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setInt(1, bookId);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -324,71 +505,69 @@ public class ManagerDashboardController implements DashboardController {
     private void refreshLoans() {
         try (Connection conn = DatabaseUtil.getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM loans WHERE returned_at IS NULL ORDER BY borrowed_at DESC")) {
+             // Shows active loans (not returned). If you also want returned, remove the WHERE clause.
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT loans_id, users_id, staff_id, copy_id, borrowed_at, due_date, returned_at " +
+                             "FROM loans " +
+                             "ORDER BY borrowed_at DESC")) {
 
             ObservableList<LoanEntity> loans = FXCollections.observableArrayList();
             while (rs.next()) {
                 LoanEntity loan = new LoanEntity();
                 loan.setLoansId(rs.getInt("loans_id"));
-                loan.setBorrowedAt(rs.getTimestamp("borrowed_at") != null ?
-                        rs.getTimestamp("borrowed_at").toLocalDateTime() : null);
-                loan.setDueDate(rs.getDate("due_date") != null ?
-                        rs.getDate("due_date").toLocalDate() : null);
+                Timestamp bt = rs.getTimestamp("borrowed_at");
+                loan.setBorrowedAt(bt != null ? bt.toLocalDateTime() : null);
+                Date dd = rs.getDate("due_date");
+                loan.setDueDate(dd != null ? dd.toLocalDate() : null);
+                Timestamp rt = rs.getTimestamp("returned_at");
+                loan.setReturnedAt(rt != null ? rt.toLocalDateTime() : null);
 
-                // Load user information
+                // Load user & copy
                 UserEntity user = loadUser(rs.getInt("users_id"));
                 loan.setUser(user);
-
-                // Load book copy information
                 BookCopyEntity copy = loadBookCopy(rs.getInt("copy_id"));
                 loan.setCopy(copy);
 
                 loans.add(loan);
             }
-
             loansTable.setItems(loans);
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     private void refreshReservations() {
         try (Connection conn = DatabaseUtil.getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM reservations WHERE status = 'PENDING' ORDER BY created_at DESC")) {
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT reservations_id, user_id, book_id, created_at, status " +
+                             "FROM reservations " +
+                             "ORDER BY created_at DESC")) {
 
             ObservableList<ReservationEntity> reservations = FXCollections.observableArrayList();
             while (rs.next()) {
                 ReservationEntity reservation = new ReservationEntity();
                 reservation.setReservationsId(rs.getInt("reservations_id"));
-                reservation.setCreatedAt(rs.getTimestamp("created_at") != null ?
-                        rs.getTimestamp("created_at").toLocalDateTime() : null);
+                Timestamp ct = rs.getTimestamp("created_at");
+                reservation.setCreatedAt(ct != null ? ct.toLocalDateTime() : null);
                 reservation.setStatus(rs.getString("status"));
 
-                // Load user information
                 UserEntity user = loadUser(rs.getInt("user_id"));
                 reservation.setUser(user);
 
-                // Load book information
                 BookEntity book = loadBook(rs.getInt("book_id"));
                 reservation.setBook(book);
 
                 reservations.add(reservation);
             }
-
             reservationsTable.setItems(reservations);
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     private UserEntity loadUser(int userId) throws SQLException {
-        String sql = "SELECT * FROM users WHERE users_id = ?";
+        String sql = "SELECT users_id, username, first_name, last_name, email FROM users WHERE users_id = ?";
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setInt(1, userId);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -406,7 +585,24 @@ public class ManagerDashboardController implements DashboardController {
     }
 
     private BookCopyEntity loadBookCopy(int copyId) throws SQLException {
-        //
+        String sql = "SELECT copies_id, books_id, status, acquired_at FROM book_copies WHERE copies_id = ?";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, copyId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    BookCopyEntity copy = new BookCopyEntity();
+                    copy.setCopiesId(rs.getInt("copies_id"));
+                    copy.setStatus(rs.getString("status"));
+                    Date acq = rs.getDate("acquired_at");
+                    copy.setAcquiredAt(acq != null ? acq.toLocalDate() : null);
+
+                    BookEntity book = loadBook(rs.getInt("books_id"));
+                    copy.setBook(book);
+                    return copy;
+                }
+            }
+        }
         return null;
     }
 
@@ -414,58 +610,54 @@ public class ManagerDashboardController implements DashboardController {
         String sql = "UPDATE book_copies SET status = ? WHERE copies_id = ?";
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setString(1, status);
             stmt.setInt(2, copyId);
             stmt.executeUpdate();
         }
     }
 
-    private void initializeData() {
-
-    }
+    /* --------------------------- misc --------------------------- */
+    private void initializeData() { }
 
     @FXML
     private void handleLogout() {
-        try {
-            // Reuse the same window
-            Stage stage = (Stage) userLabel.getScene().getWindow();
+        javafx.application.Platform.runLater(() -> {
+            Stage oldStage = (Stage) userLabel.getScene().getWindow();
+            oldStage.hide();
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(
-                    "/com/tuvarna/bg/library/view/login-view.fxml"));
-            Parent root = loader.load();
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/tuvarna/bg/library/view/login-view.fxml"));
+                Parent root = loader.load();
 
-            Scene scene = new Scene(root);
-            URL css = getClass().getResource("/com/tuvarna/bg/library/css/styles.css");
-            if (css != null) scene.getStylesheets().add(css.toExternalForm());
+                Scene scene = new Scene(root);
+                URL css = getClass().getResource("/com/tuvarna/bg/library/css/styles.css");
+                if (css != null) scene.getStylesheets().add(css.toExternalForm());
 
-            stage.setScene(scene);
+                Stage loginStage = new Stage(StageStyle.UNDECORATED);
+                loginStage.setTitle("Library Management System");
+                loginStage.setScene(scene);
+                loginStage.setResizable(false);
+                loginStage.setMaximized(true);
+                loginStage.centerOnScreen();
 
-            // Force maximized login
-            stage.setMaximized(true);
-            stage.setResizable(false);
-            stage.centerOnScreen();
+                scene.setOnKeyPressed(e -> {
+                    if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) javafx.application.Platform.exit();
+                });
 
-            // ESC on login ⇒ exit app
-            scene.setOnKeyPressed(e -> {
-                if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
-                    javafx.application.Platform.exit();
-                }
-            });
+                Button closeBtn = (Button) root.lookup("#closeButton");
+                if (closeBtn != null) closeBtn.setOnAction(e -> javafx.application.Platform.exit());
+                Button minimizeBtn = (Button) root.lookup("#minimizeButton");
+                if (minimizeBtn != null) minimizeBtn.setOnAction(e -> loginStage.setIconified(true));
 
-            // Re-wire custom chrome on the new scene
-            Button closeBtn = (Button) root.lookup("#closeButton");
-            if (closeBtn != null) closeBtn.setOnAction(e -> javafx.application.Platform.exit());
-            Button minimizeBtn = (Button) root.lookup("#minimizeButton");
-            if (minimizeBtn != null) minimizeBtn.setOnAction(e -> stage.setIconified(true));
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            // Optional: show an alert to the user
-            // new Alert(Alert.AlertType.ERROR, "Failed to load login screen:\n" + ex.getMessage()).showAndWait();
-        }
+                loginStage.show();
+                oldStage.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                new Alert(Alert.AlertType.ERROR, "Failed to load login screen:\n" + ex.getMessage()).showAndWait();
+                oldStage.show();
+            }
+        });
     }
-
 
     private void showAlert(String title, String content, Alert.AlertType alertType) {
         Alert alert = new Alert(alertType);
@@ -473,6 +665,41 @@ public class ManagerDashboardController implements DashboardController {
         alert.setHeaderText(null);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    private void toggleReservationStatus(ReservationEntity reservation) {
+        String currentStatus = reservation.getStatus();
+        String newStatus;
+        switch (currentStatus) {
+            case "PENDING":   newStatus = "READY";      break;
+            case "READY":     newStatus = "COMPLETED";  break;
+            case "COMPLETED": newStatus = "CANCELLED";  break;
+            case "CANCELLED": newStatus = "PENDING";    break;
+            default:          newStatus = "PENDING";
+        }
+
+        try {
+            String sql = "UPDATE reservations SET status = ? WHERE reservations_id = ?";
+            try (Connection conn = DatabaseUtil.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, newStatus);
+                stmt.setInt(2, reservation.getReservationsId());
+
+                int rows = stmt.executeUpdate();
+                if (rows > 0) {
+                    reservation.setStatus(newStatus);
+                    reservationsTable.refresh();
+                    showAlert("Success",
+                            "Reservation status changed from " + currentStatus + " to " + newStatus,
+                            Alert.AlertType.INFORMATION);
+                } else {
+                    showAlert("Error", "Failed to update reservation status", Alert.AlertType.ERROR);
+                }
+            }
+        } catch (SQLException e) {
+            showAlert("Error", "Database error: " + e.getMessage(), Alert.AlertType.ERROR);
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -483,7 +710,5 @@ public class ManagerDashboardController implements DashboardController {
     }
 
     @Override
-    public UserEntity getCurrentUser() {
-        return currentUser;
-    }
+    public UserEntity getCurrentUser() { return currentUser; }
 }

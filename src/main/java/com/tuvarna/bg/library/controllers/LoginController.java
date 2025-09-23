@@ -13,7 +13,6 @@ import javafx.stage.StageStyle;
 
 import java.io.IOException;
 import java.sql.*;
-import java.util.Objects;
 import java.util.logging.Logger;
 
 public class LoginController {
@@ -23,6 +22,7 @@ public class LoginController {
     @FXML private PasswordField passwordField;
     @FXML private Button loginButton;
     @FXML private Label errorLabel;
+
 
     private UserDAO userDAO;
 

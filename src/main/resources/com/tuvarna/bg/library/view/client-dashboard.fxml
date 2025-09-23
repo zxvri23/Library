@@ -87,18 +87,6 @@
                         </TableView>
                     </VBox>
 
-                    <VBox styleClass="card" spacing="15">
-                        <Label text="Loan History" styleClass="card-title" />
-
-                        <TableView fx:id="loanHistoryTable" VBox.vgrow="ALWAYS">
-                            <columns>
-                                <TableColumn text="Book" fx:id="historyBookColumn" />
-                                <TableColumn text="Borrowed Date" fx:id="historyBorrowedColumn" />
-                                <TableColumn text="Returned Date" fx:id="historyReturnedColumn" />
-                                <TableColumn text="Status" fx:id="historyStatusColumn" />
-                            </columns>
-                        </TableView>
-                    </VBox>
                 </VBox>
             </Tab>
 
@@ -120,51 +108,6 @@
                 </VBox>
             </Tab>
 
-            <Tab text="📚 Book Details" closable="false">
-                <VBox spacing="20" style="-fx-padding: 20;">
-
-                    <VBox styleClass="form-container" spacing="15">
-                        <HBox spacing="20" alignment="TOP_LEFT">
-                            <VBox spacing="10" alignment="CENTER">
-                                <ImageView fx:id="bookCoverImage" styleClass="book-image" />
-                                <Label fx:id="bookTitleLabel" text="Book Title" styleClass="form-title" />
-                            </VBox>
-
-                            <VBox spacing="10" style="-fx-pref-width: 400;">
-                                <Label text="Book Information" styleClass="form-title" />
-
-                                <GridPane hgap="15" vgap="5">
-                                    <Label text="Author:" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="form-label" />
-                                    <Label fx:id="authorLabel" text="Author Name" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-
-                                    <Label text="Publisher:" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="form-label" />
-                                    <Label fx:id="publisherLabel" text="Publisher Name" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-
-                                    <Label text="ISBN:" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="form-label" />
-                                    <Label fx:id="isbnLabel" text="ISBN Number" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-
-                                    <Label text="Language:" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="form-label" />
-                                    <Label fx:id="languageLabel" text="Language" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-
-                                    <Label text="Year:" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="form-label" />
-                                    <Label fx:id="yearLabel" text="Publication Year" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-
-                                    <Label text="Genres:" GridPane.columnIndex="0" GridPane.rowIndex="5" styleClass="form-label" />
-                                    <Label fx:id="genresLabel" text="Genre List" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-                                </GridPane>
-
-                                <Label text="Summary:" styleClass="form-label" />
-                                <TextArea fx:id="summaryArea" editable="false" wrapText="true" prefRowCount="4" styleClass="text-field" />
-
-                                <HBox spacing="15" alignment="CENTER">
-                                    <Button fx:id="reserveButton" text="Reserve Book" styleClass="button" onAction="#reserveBook" />
-                                    <Button fx:id="borrowButton" text="Borrow Available Copy" styleClass="button" onAction="#borrowBook" />
-                                </HBox>
-                            </VBox>
-                        </HBox>
-                    </VBox>
-                </VBox>
-            </Tab>
 
         </TabPane>
     </VBox>

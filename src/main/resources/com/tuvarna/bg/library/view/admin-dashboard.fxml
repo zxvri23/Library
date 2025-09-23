@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.image.ImageView?>
 
 <StackPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="com.tuvarna.bg.library.controllers.AdminDashboardController"
@@ -68,9 +68,10 @@
                                         <Label fx:id="imageLabel" text="No image selected" style="-fx-text-fill: #6c757d;" />
                                     </HBox>
 
+                                    <!-- Authors (dropdown + Add button that opens form) -->
                                     <Label text="Authors:" GridPane.columnIndex="0" GridPane.rowIndex="7" styleClass="form-label" />
                                     <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="7" alignment="CENTER_LEFT">
-                                        <TextField fx:id="authorField" promptText="Enter author name" styleClass="text-field" />
+                                        <ComboBox fx:id="authorCombo" promptText="Select author" styleClass="text-field" />
                                         <Button text="Add Author" styleClass="secondary-button" onAction="#addAuthor" />
                                     </HBox>
 
@@ -105,7 +106,6 @@
                                 <TableView fx:id="booksTable" VBox.vgrow="ALWAYS">
                                     <columns>
                                         <TableColumn text="ID" fx:id="idColumn" />
-                                        <!-- Cover column removed -->
                                         <TableColumn text="Title" fx:id="titleColumn" />
                                         <TableColumn text="ISBN" fx:id="isbnColumn" />
                                         <TableColumn text="Publisher" fx:id="publisherColumn" />
@@ -125,7 +125,7 @@
                 <ScrollPane fitToWidth="true" hbarPolicy="NEVER" pannable="true"
                             style="-fx-background-color: transparent;">
                     <content>
-                        <VBox spacing="20" style="-fx-padding: 20;">
+                        <VBox spacing="20" style="-fx-padding: 20%;">
                             <VBox styleClass="form-container" spacing="15">
                                 <Label text="Add New User" styleClass="form-title" />
 
@@ -209,15 +209,8 @@
                             </HBox>
 
                             <VBox styleClass="card" spacing="15">
-                                <Label text="Recent Activity" styleClass="card-title" />
-                                <TableView fx:id="activityTable" VBox.vgrow="ALWAYS">
-                                    <columns>
-                                        <TableColumn text="Date" fx:id="activityDateColumn" />
-                                        <TableColumn text="Action" fx:id="activityActionColumn" />
-                                        <TableColumn text="User" fx:id="activityUserColumn" />
-                                        <TableColumn text="Details" fx:id="activityDetailsColumn" />
-                                    </columns>
-                                </TableView>
+                                <Label text="System Requests" styleClass="card-title" />
+                                <VBox fx:id="requestCardsContainer" spacing="10" VBox.vgrow="ALWAYS" />
                             </VBox>
                         </VBox>
                     </content>
@@ -225,6 +218,63 @@
             </Tab>
 
         </TabPane>
+    </VBox>
+
+    <!-- Add Author Form Overlay -->
+    <VBox fx:id="addAuthorForm" visible="false" styleClass="overlay-form"
+          style="-fx-background-color: rgba(0,0,0,0.7); -fx-alignment: center;">
+        <VBox styleClass="form-container" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 20; -fx-max-width: 400;">
+            <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 15 0;">
+                <Label text="✏️" style="-fx-font-size: 20px;" />
+                <Label text="Add New Author" styleClass="form-title" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Button text="✕" styleClass="close-button" onAction="#cancelAuthor" />
+            </HBox>
+
+            <VBox spacing="10">
+                <Label text="Full Name:" styleClass="form-label" />
+                <TextField fx:id="authorNameField" promptText="Enter author's full name" styleClass="text-field" />
+
+                <Label text="Birth Date (YYYY-MM-DD):" styleClass="form-label" />
+                <TextField fx:id="authorBirthDateField" promptText="Enter birth date (optional)" styleClass="text-field" />
+
+                <Label fx:id="authorMessageLabel" text="" style="-fx-text-fill: #27ae60; -fx-font-size: 14px;" />
+
+                <HBox spacing="10" alignment="CENTER">
+                    <Button text="Add Author" styleClass="button" onAction="#submitAuthor" />
+                    <Button text="Cancel" styleClass="secondary-button" onAction="#cancelAuthor" />
+                </HBox>
+            </VBox>
+        </VBox>
+    </VBox>
+
+    <!-- Add Genre Form Overlay -->
+    <VBox fx:id="addGenreForm" visible="false" styleClass="overlay-form"
+          style="-fx-background-color: rgba(0,0,0,0.7); -fx-alignment: center;">
+        <VBox styleClass="form-container" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 20; -fx-max-width: 400;">
+            <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 15 0;">
+                <Label text="📚" style="-fx-font-size: 20px;" />
+                <Label text="Add New Genre" styleClass="form-title" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Button text="✕" styleClass="close-button" onAction="#cancelGenre" />
+            </HBox>
+
+            <VBox spacing="10">
+                <Label text="Genre Name:" styleClass="form-label" />
+                <TextField fx:id="genreNameField" promptText="Enter genre name" styleClass="text-field" />
+
+                <Label text="Description:" styleClass="form-label" />
+                <TextArea fx:id="genreDescriptionArea" promptText="Enter genre description (optional)"
+                          styleClass="text-field" prefRowCount="3" wrapText="true" />
+
+                <Label fx:id="genreMessageLabel" text="" style="-fx-text-fill: #27ae60; -fx-font-size: 14px;" />
+
+                <HBox spacing="10" alignment="CENTER">
+                    <Button text="Add Genre" styleClass="button" onAction="#submitGenre" />
+                    <Button text="Cancel" styleClass="secondary-button" onAction="#cancelGenre" />
+                </HBox>
+            </VBox>
+        </VBox>
     </VBox>
 
 </StackPane>

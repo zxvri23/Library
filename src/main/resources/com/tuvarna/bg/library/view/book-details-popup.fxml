@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
+
+<StackPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.tuvarna.bg.library.controllers.BookDetailsPopUpController"
+           styleClass="popup-container">
+
+    <VBox styleClass="popup-content" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 20; -fx-max-width: 600; -fx-max-height: 500;">
+
+        <!-- Header -->
+        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 20 0;">
+            <Label text="📚" style="-fx-font-size: 24px;" />
+            <Label text="Book Details" styleClass="form-title" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="closeButton" text="✕" styleClass="close-button" onAction="#closePopup" />
+        </HBox>
+
+        <!-- Content -->
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
+            <VBox spacing="20">
+                <HBox spacing="20" alignment="TOP_LEFT">
+                    <!-- Book Cover -->
+                    <VBox spacing="10" alignment="CENTER">
+                        <ImageView fx:id="bookCoverImage" styleClass="book-image"
+                                   fitWidth="150" fitHeight="200" />
+                    </VBox>
+
+                    <!-- Book Information -->
+                    <VBox spacing="15" style="-fx-pref-width: 400;">
+                        <Label fx:id="bookTitleLabel" text="Book Title" styleClass="form-title"
+                               style="-fx-font-size: 20px; -fx-text-fill: #2c3e50;" />
+
+                        <GridPane hgap="15" vgap="8">
+                            <Label text="Author:" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="form-label" />
+                            <Label fx:id="authorLabel" text="Author Name" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                            <Label text="Publisher:" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="form-label" />
+                            <Label fx:id="publisherLabel" text="Publisher Name" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                            <Label text="ISBN:" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="form-label" />
+                            <Label fx:id="isbnLabel" text="ISBN Number" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+                            <Label text="Language:" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="form-label" />
+                            <Label fx:id="languageLabel" text="Language" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+                            <Label text="Year:" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="form-label" />
+                            <Label fx:id="yearLabel" text="Publication Year" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+
+                            <Label text="Genres:" GridPane.columnIndex="0" GridPane.rowIndex="5" styleClass="form-label" />
+                            <Label fx:id="genresLabel" text="Genre List" GridPane.columnIndex="1" GridPane.rowIndex="5"
+                                   style="-fx-wrap-text: true;" />
+                        </GridPane>
+
+                        <Label text="Summary:" styleClass="form-label" />
+                        <TextArea fx:id="summaryArea" editable="false" wrapText="true"
+                                  prefRowCount="4" styleClass="text-field" />
+
+                        <!-- Action Buttons -->
+                        <HBox spacing="15" alignment="CENTER" style="-fx-padding: 20 0 0 0;">
+                            <Button fx:id="reserveButton" text="Reserve Book" styleClass="button" onAction="#reserveBook" />
+                            <Button fx:id="borrowButton" text="Borrow Available Copy" styleClass="button" onAction="#borrowBook" />
+                        </HBox>
+                    </VBox>
+                </HBox>
+            </VBox>
+        </ScrollPane>
+    </VBox>
+
+</StackPane>
